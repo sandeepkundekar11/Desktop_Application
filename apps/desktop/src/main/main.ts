@@ -1,6 +1,8 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { initDatabase, closeDatabase } from './storage/database.js';
+import { registerStorageIpcHandlers } from './ipc/storageIpc.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,6 +40,12 @@ const createWindow = (): BrowserWindow => {
 };
 
 app.whenReady().then(() => {
+  // Initialize local SQLite database
+  initDatabase();
+
+  // Register strictly validated storage IPC handlers
+  registerStorageIpcHandlers();
+
   createWindow();
 
   app.on('activate', () => {
@@ -49,6 +57,7 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
+    closeDatabase();
     app.quit();
   }
 });

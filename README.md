@@ -59,5 +59,11 @@ Ensure your development environment meets the following requirements:
   - Design tokens established for color palette, typography scale, spacing scale, border radii, shadows, and control heights.
   - Light and Dark themes implemented via semantic CSS variables and accessible `data-theme` attribute cascading.
   - Reusable, accessible functional components implemented: `Button`, `Input`, `Card`, and `ThemeToggle`.
-  - Desktop initialization screen updated to demonstrate the shared design system with interactive theme switching and error state demonstration.
-- **Next Stage**: Chunk 4 (Awaiting instructions)
+  - Desktop initialization screen updated to demonstrate the shared design system.
+- **Chunk 4 — Local Storage Foundation**: Completed.
+  - Local filesystem directory hierarchy established using `app.getPath('userData')` (`database/`, `resumes/original/`, `resumes/optimized/`, `resumes/tailored/`, `exports/`, `logs/`).
+  - Native SQLite 3.49 persistence integrated via Node 22 built-in `node:sqlite` (`DatabaseSync`), with WAL mode, foreign keys, schema migrations, and parameterized queries.
+  - Secure local file storage service implemented with strict path traversal guards and area allowlists.
+  - Narrow, typed IPC storage bridge registered (`storage:get-status`, `storage:set-setting`, `storage:get-setting`, `storage:verify`) with input allowlisting.
+  - Minimal storage verification screen implemented in the React renderer demonstrating save, read, and full persistence verification surviving application restarts.
+- **Next Stage**: Chunk 5 (Awaiting instructions)

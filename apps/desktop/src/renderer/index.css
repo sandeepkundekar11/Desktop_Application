@@ -75,3 +75,48 @@ html, body, #root {
   gap: var(--space-3);
   margin-top: var(--space-2);
 }
+
+.storage-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background-color: var(--color-background-secondary);
+  border: var(--border-width-thin) solid var(--color-border);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.storage-meta__item {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.storage-meta__value {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  word-break: break-all;
+}
+
+.demo-result {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  transition: all var(--transition-fast);
+}
+
+.demo-result--success {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  border: var(--border-width-thin) solid var(--color-success);
+}
+
+.demo-result--error {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+  border: var(--border-width-thin) solid var(--color-error);
+}
