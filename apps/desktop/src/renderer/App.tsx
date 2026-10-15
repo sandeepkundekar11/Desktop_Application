@@ -1,41 +1,68 @@
-import React, { FC } from 'react';
+import React, { FC, useState } from 'react';
+import {
+  ThemeProvider,
+  ThemeToggle,
+  Button,
+  Input,
+  Card,
+} from '@applypilot/ui';
 
-const PaperAirplaneIcon: FC = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" />
-  </svg>
-);
+export const AppContent: FC = () => {
+  const [inputValue, setInputValue] = useState('My Automation Workspace');
+  const [showError, setShowError] = useState(false);
 
-interface StatusIndicatorProps {
-  readonly label: string;
-}
-
-const StatusIndicator: FC<StatusIndicatorProps> = ({ label }) => (
-  <div className="status-pill" id="dev-status-indicator" role="status">
-    <span className="status-dot" aria-hidden="true" />
-    <span>{label}</span>
-  </div>
-);
-
-export const App: FC = () => {
-  const appInfo = window.applyPilotAPI?.getAppInfo();
-  const statusLabel = appInfo?.environment === 'development'
-    ? 'Development Mode'
-    : 'Ready';
+  const toggleInputError = () => {
+    setShowError((current) => !current);
+  };
 
   return (
-    <main className="verification-container" id="verification-screen">
-      <div className="verification-card">
-        <div className="logo-badge">
-          <PaperAirplaneIcon />
-        </div>
-        <header>
-          <h1 className="app-title">ApplyPilot</h1>
-          <p className="app-subtitle">Desktop application initialized</p>
-        </header>
-        <StatusIndicator label={statusLabel} />
-      </div>
-    </main>
+    <div className="demo-layout">
+      <header className="demo-header">
+        <h1 className="demo-header__title">ApplyPilot</h1>
+        <ThemeToggle />
+      </header>
+
+      <main>
+        <Card
+          header={
+            <div className="demo-status" id="dev-status-indicator" role="status">
+              <span className="demo-status__dot" aria-hidden="true" />
+              <span>Desktop application initialized</span>
+            </div>
+          }
+        >
+          <Input
+            id="workspace-input"
+            label="Workspace Configuration"
+            placeholder="Enter workspace name"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            error={showError ? 'Workspace name cannot be empty or invalid' : undefined}
+            helperText="Shared design system token and component verification"
+          />
+
+          <div className="demo-actions">
+            <Button variant="primary">
+              Primary Action
+            </Button>
+            <Button variant="secondary" onClick={toggleInputError}>
+              {showError ? 'Clear Input Error' : 'Trigger Input Error'}
+            </Button>
+            <Button variant="secondary" disabled>
+              Disabled Action
+            </Button>
+          </div>
+        </Card>
+      </main>
+    </div>
+  );
+};
+
+export const App: FC = () => {
+  return (
+    <ThemeProvider defaultTheme="dark">
+      <AppContent />
+    </ThemeProvider>
   );
 };
 

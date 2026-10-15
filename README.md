@@ -7,7 +7,7 @@ ApplyPilot is an intelligent, privacy-focused application automation system desi
 The repository is organized using npm workspaces:
 
 - `apps/`: Application frontends and runnable targets (`apps/desktop`).
-- `packages/`: Modular internal libraries and utilities shared across applications.
+- `packages/`: Modular internal libraries and shared design systems (`packages/ui`).
 - `docs/`: Technical specifications, architectural decision records (ADRs), and documentation.
 
 ## Prerequisites
@@ -33,9 +33,9 @@ Ensure your development environment meets the following requirements:
    npm run dev:desktop
    ```
 
-3. **Type-check TypeScript:**
+3. **Type-check TypeScript Across Workspaces:**
    ```bash
-   npm run typecheck:desktop
+   npm run typecheck
    ```
 
 4. **Build Desktop for Production:**
@@ -54,4 +54,10 @@ Ensure your development environment meets the following requirements:
   - Security defaults applied (`contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, restricted preload bridge).
   - Minimal verification screen with development status indicator implemented.
   - Workspace scripts for dev, build, and typecheck integrated at root.
-- **Next Stage**: Chunk 3 (Awaiting instructions)
+- **Chunk 3 — Shared Design System Foundation**: Completed.
+  - Shared UI package created (`packages/ui`) adhering to clean Modern SaaS aesthetic.
+  - Design tokens established for color palette, typography scale, spacing scale, border radii, shadows, and control heights.
+  - Light and Dark themes implemented via semantic CSS variables and accessible `data-theme` attribute cascading.
+  - Reusable, accessible functional components implemented: `Button`, `Input`, `Card`, and `ThemeToggle`.
+  - Desktop initialization screen updated to demonstrate the shared design system with interactive theme switching and error state demonstration.
+- **Next Stage**: Chunk 4 (Awaiting instructions)

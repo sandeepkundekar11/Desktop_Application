@@ -12,7 +12,8 @@
     "dev:desktop": "npm --workspace=@applypilot/desktop run dev",
     "build:desktop": "npm --workspace=@applypilot/desktop run build",
     "typecheck:desktop": "npm --workspace=@applypilot/desktop run typecheck",
-    "typecheck": "npm --workspace=@applypilot/desktop run typecheck"
+    "typecheck:ui": "tsc -p packages/ui/tsconfig.json --noEmit",
+    "typecheck": "npm run typecheck:ui && npm run typecheck:desktop"
   },
   "devDependencies": {
     "typescript": "^5.8.2"
