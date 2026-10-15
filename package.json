@@ -8,6 +8,12 @@
     "apps/*",
     "packages/*"
   ],
+  "scripts": {
+    "dev:desktop": "npm --workspace=@applypilot/desktop run dev",
+    "build:desktop": "npm --workspace=@applypilot/desktop run build",
+    "typecheck:desktop": "npm --workspace=@applypilot/desktop run typecheck",
+    "typecheck": "npm --workspace=@applypilot/desktop run typecheck"
+  },
   "devDependencies": {
     "typescript": "^5.8.2"
   },

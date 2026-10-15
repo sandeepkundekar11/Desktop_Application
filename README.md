@@ -6,7 +6,7 @@ ApplyPilot is an intelligent, privacy-focused application automation system desi
 
 The repository is organized using npm workspaces:
 
-- `apps/`: Application frontends and runnable targets (e.g., desktop application, browser extensions).
+- `apps/`: Application frontends and runnable targets (`apps/desktop`).
 - `packages/`: Modular internal libraries and utilities shared across applications.
 - `docs/`: Technical specifications, architectural decision records (ADRs), and documentation.
 
@@ -21,27 +21,37 @@ Ensure your development environment meets the following requirements:
 
 ## Getting Started
 
-1. **Clone the repository:**
+1. **Clone the repository and install dependencies:**
    ```bash
    git clone <repository-url>
    cd Desktop_Application
-   ```
-
-2. **Install dependencies:**
-   ```bash
    npm install
    ```
 
-3. **Verify TypeScript configuration:**
+2. **Run Desktop in Development Mode:**
    ```bash
-   node -e "const ts = require('typescript'); const cfg = ts.readConfigFile('tsconfig.base.json', ts.sys.readFile); if (cfg.error) throw cfg.error; console.log('tsconfig.base.json is valid');"
+   npm run dev:desktop
+   ```
+
+3. **Type-check TypeScript:**
+   ```bash
+   npm run typecheck:desktop
+   ```
+
+4. **Build Desktop for Production:**
+   ```bash
+   npm run build:desktop
    ```
 
 ## Development Status
 
-- **Current Stage**: Chunk 1 — Project Initialization Completed
+- **Chunk 1 — Project Initialization**: Completed.
   - Monorepo workspace configuration (`apps/*`, `packages/*`) established.
   - Shared TypeScript baseline configuration defined (`tsconfig.base.json`).
-  - Standard `.gitignore` and security exclusions in place.
-  - Workspace directories (`apps/`, `packages/`, `docs/`) initialized.
-- **Next Stage**: Chunk 2 (Awaiting instructions)
+  - Standard `.gitignore` and security exclusions configured.
+- **Chunk 2 — Desktop Foundation**: Completed.
+  - Electron + React + TypeScript + Vite desktop package created (`apps/desktop`).
+  - Security defaults applied (`contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, restricted preload bridge).
+  - Minimal verification screen with development status indicator implemented.
+  - Workspace scripts for dev, build, and typecheck integrated at root.
+- **Next Stage**: Chunk 3 (Awaiting instructions)
