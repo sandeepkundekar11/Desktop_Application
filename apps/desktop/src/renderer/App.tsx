@@ -3,102 +3,93 @@ import {
   ThemeProvider,
   ThemeToggle,
   Button,
-  Input,
   Card,
 } from '@applypilot/ui';
-
-interface StorageStatusState {
-  readonly isInitialized: boolean;
-  readonly schemaVersion: number;
-}
+import { ResumeMetadata } from './types';
 
 export const AppContent: FC = () => {
-  const [settingValue, setSettingValue] = useState('ApplyPilot_User_Setting');
-  const [resultMessage, setResultMessage] = useState<string | null>(null);
-  const [resultType, setResultType] = useState<'success' | 'error'>('success');
-  const [storageStatus, setStorageStatus] = useState<StorageStatusState | null>(null);
+  const [resumes, setResumes] = useState<readonly ResumeMetadata[]>([]);
+  const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null);
+  const [selectedExtractedText, setSelectedExtractedText] = useState<string | null>(null);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [alertType, setAlertType] = useState<'success' | 'error'>('success');
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchStatus = useCallback(async () => {
+  const loadResumes = useCallback(async () => {
     try {
-      if (window.applyPilotAPI?.storage) {
-        const status = await window.applyPilotAPI.storage.getStatus();
-        setStorageStatus({
-          isInitialized: status.isInitialized,
-          schemaVersion: status.schemaVersion,
-        });
+      if (window.applyPilotAPI?.resume) {
+        const list = await window.applyPilotAPI.resume.list();
+        setResumes(list);
       }
     } catch (err) {
-      setResultType('error');
-      setResultMessage(`Failed to load storage status: ${err instanceof Error ? err.message : String(err)}`);
+      setAlertType('error');
+      setAlertMessage(`Failed to load resumes: ${err instanceof Error ? err.message : String(err)}`);
     }
   }, []);
 
   useEffect(() => {
-    fetchStatus();
-  }, [fetchStatus]);
+    loadResumes();
+  }, [loadResumes]);
 
-  const handleSaveSetting = async () => {
+  const handleUploadResume = async () => {
     setIsLoading(true);
-    setResultMessage(null);
+    setAlertMessage(null);
     try {
-      if (!window.applyPilotAPI?.storage) {
-        throw new Error('Storage API bridge unavailable');
+      if (!window.applyPilotAPI?.resume) {
+        throw new Error('Resume API bridge is not available');
       }
-      await window.applyPilotAPI.storage.saveSetting('test_setting', settingValue);
-      setResultType('success');
-      setResultMessage(`Setting "test_setting" saved successfully with value: "${settingValue}"`);
-    } catch (err) {
-      setResultType('error');
-      setResultMessage(`Save failed: ${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleReadSetting = async () => {
-    setIsLoading(true);
-    setResultMessage(null);
-    try {
-      if (!window.applyPilotAPI?.storage) {
-        throw new Error('Storage API bridge unavailable');
-      }
-      const val = await window.applyPilotAPI.storage.getSetting('test_setting');
-      setResultType('success');
-      setResultMessage(
-        val !== null
-          ? `Read setting "test_setting": "${val}"`
-          : 'Setting "test_setting" is not set yet'
-      );
-    } catch (err) {
-      setResultType('error');
-      setResultMessage(`Read failed: ${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      const result = await window.applyPilotAPI.resume.selectAndImport();
 
-  const handleVerifyPersistence = async () => {
-    setIsLoading(true);
-    setResultMessage(null);
-    try {
-      if (!window.applyPilotAPI?.storage) {
-        throw new Error('Storage API bridge unavailable');
+      if (!result.success) {
+        if (result.error !== 'CANCELLED') {
+          setAlertType('error');
+          setAlertMessage(result.error ?? 'Failed to import resume.');
+        }
+        return;
       }
-      const res = await window.applyPilotAPI.storage.verify();
-      if (res.success) {
-        setResultType('success');
-        setResultMessage(`${res.message} (Value: "${res.retrievedValue}")`);
+
+      await loadResumes();
+
+      if (result.isDuplicate) {
+        setAlertType('success');
+        setAlertMessage(`Resume "${result.metadata?.originalFilename}" was already imported (duplicate detected).`);
       } else {
-        setResultType('error');
-        setResultMessage(res.message);
+        setAlertType('success');
+        setAlertMessage(`Successfully imported and extracted text from "${result.metadata?.originalFilename}".`);
       }
     } catch (err) {
-      setResultType('error');
-      setResultMessage(`Verification failed: ${err instanceof Error ? err.message : String(err)}`);
+      setAlertType('error');
+      setAlertMessage(`Upload failed: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleToggleExtractedText = async (id: string) => {
+    if (selectedResumeId === id) {
+      setSelectedResumeId(null);
+      setSelectedExtractedText(null);
+      return;
+    }
+
+    try {
+      if (!window.applyPilotAPI?.resume) return;
+      const details = await window.applyPilotAPI.resume.getExtractedText(id);
+      if (details) {
+        setSelectedResumeId(id);
+        setSelectedExtractedText(details.extractedText);
+      }
+    } catch (err) {
+      setAlertType('error');
+      setAlertMessage(`Failed to load extracted text: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   return (
@@ -108,65 +99,88 @@ export const AppContent: FC = () => {
         <ThemeToggle />
       </header>
 
-      <main>
-        <Card
-          header={
-            <div className="demo-status" id="storage-status-indicator" role="status">
-              <span className="demo-status__dot" aria-hidden="true" />
-              <span>
-                {storageStatus?.isInitialized
-                  ? `Local Storage Initialized (SQLite Schema v${storageStatus.schemaVersion})`
-                  : 'Initializing local storage...'}
-              </span>
-            </div>
-          }
+      <section className="resume-section-header">
+        <div>
+          <h2 className="resume-section-title">Resume Management</h2>
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+            Upload, extract, and verify local resume documents securely.
+          </p>
+        </div>
+        <Button
+          variant="primary"
+          id="btn-upload-resume"
+          onClick={handleUploadResume}
+          disabled={isLoading}
         >
-          <Input
-            id="test-setting-input"
-            label="Allowlisted Test Setting ('test_setting')"
-            placeholder="Enter value to store in SQLite"
-            value={settingValue}
-            onChange={(e) => setSettingValue(e.target.value)}
-            helperText="Stored locally on disk via parameterized SQLite queries"
-          />
+          {isLoading ? 'Processing...' : 'Upload Resume'}
+        </Button>
+      </section>
 
-          <div className="demo-actions">
-            <Button
-              variant="primary"
-              id="btn-save-setting"
-              onClick={handleSaveSetting}
-              disabled={isLoading}
-            >
-              Save Test Setting
-            </Button>
-            <Button
-              variant="secondary"
-              id="btn-read-setting"
-              onClick={handleReadSetting}
-              disabled={isLoading}
-            >
-              Read Saved Setting
-            </Button>
-            <Button
-              variant="secondary"
-              id="btn-verify-storage"
-              onClick={handleVerifyPersistence}
-              disabled={isLoading}
-            >
-              Verify Persistence
-            </Button>
-          </div>
+      {alertMessage && (
+        <div
+          className={`demo-result demo-result--${alertType}`}
+          id="resume-alert-banner"
+          role="status"
+        >
+          {alertMessage}
+        </div>
+      )}
 
-          {resultMessage && (
-            <div
-              className={`demo-result demo-result--${resultType}`}
-              id="storage-result-banner"
-              role="status"
-            >
-              {resultMessage}
+      <main className="resume-list" id="resume-list-container">
+        {resumes.length === 0 ? (
+          <Card>
+            <div className="empty-state" id="resume-empty-state">
+              <p>No resumes imported yet.</p>
+              <p style={{ marginTop: 'var(--space-2)' }}>
+                Click <strong>Upload Resume</strong> to import a PDF or DOCX document.
+              </p>
             </div>
-          )}
-        </Card>
+          </Card>
+        ) : (
+          resumes.map((resume) => {
+            const isViewing = selectedResumeId === resume.id;
+            return (
+              <Card key={resume.id} className="resume-card" id={`resume-card-${resume.id}`}>
+                <div className="resume-item-header">
+                  <span className="resume-filename">{resume.originalFilename}</span>
+                  <span className="resume-badge">{resume.fileFormat}</span>
+                </div>
+
+                <div className="resume-meta-row">
+                  <span>Size: {formatFileSize(resume.fileSize)}</span>
+                  <span>Words: {resume.wordCount}</span>
+                  <span>Chars: {resume.characterCount}</span>
+                  <span>Imported: {new Date(resume.createdAt).toLocaleDateString()}</span>
+                </div>
+
+                {resume.preview && (
+                  <p className="resume-preview-snippet">"{resume.preview}..."</p>
+                )}
+
+                <div className="demo-actions">
+                  <Button
+                    variant="secondary"
+                    id={`btn-view-text-${resume.id}`}
+                    onClick={() => handleToggleExtractedText(resume.id)}
+                  >
+                    {isViewing ? 'Hide Extracted Text' : 'Review Extracted Text'}
+                  </Button>
+                </div>
+
+                {isViewing && selectedExtractedText && (
+                  <div className="resume-text-viewer" id={`text-viewer-${resume.id}`}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <strong style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                        Extracted Plain Text Content:
+                      </strong>
+                    </div>
+                    <pre className="resume-text-content">{selectedExtractedText}</pre>
+                  </div>
+                )}
+              </Card>
+            );
+          })
+        )}
       </main>
     </div>
   );

@@ -64,6 +64,13 @@ Ensure your development environment meets the following requirements:
   - Local filesystem directory hierarchy established using `app.getPath('userData')` (`database/`, `resumes/original/`, `resumes/optimized/`, `resumes/tailored/`, `exports/`, `logs/`).
   - Native SQLite 3.49 persistence integrated via Node 22 built-in `node:sqlite` (`DatabaseSync`), with WAL mode, foreign keys, schema migrations, and parameterized queries.
   - Secure local file storage service implemented with strict path traversal guards and area allowlists.
-  - Narrow, typed IPC storage bridge registered (`storage:get-status`, `storage:set-setting`, `storage:get-setting`, `storage:verify`) with input allowlisting.
-  - Minimal storage verification screen implemented in the React renderer demonstrating save, read, and full persistence verification surviving application restarts.
-- **Next Stage**: Chunk 5 (Awaiting instructions)
+  - Narrow, typed IPC storage bridge registered with input allowlisting.
+- **Chunk 5 — Resume Upload and Text Extraction**: Completed.
+  - Native file selection dialog configured in main process for PDF and DOCX files with cancellation handling.
+  - Strict format validation module inspecting magic byte signatures (`%PDF-`, `PK\x03\x04`), file extensions, and a 10MB size cap.
+  - Pure local text extractors implemented for PDF (`pdf-parse`) and DOCX (`mammoth`), coupled with a text normalizer preserving structure, paragraphs, and headings.
+  - Original resume binaries saved under `%APPDATA%\Electron\resumes\original\` via unique UUID references, without storing binaries in SQLite.
+  - SQLite `resumes` table with SHA-256 duplicate detection and metadata indexing.
+  - Preload bridge extended (`resume:select-and-import`, `resume:list`, `resume:get-extracted-text`) preserving `contextIsolation: true` and `sandbox: true`.
+  - Minimal, accessible resume management screen with upload trigger, resume list, metadata cards, and extracted plain text reviewer.
+- **Next Stage**: Chunk 6 (Awaiting instructions)

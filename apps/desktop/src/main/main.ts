@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initDatabase, closeDatabase } from './storage/database.js';
 import { registerStorageIpcHandlers } from './ipc/storageIpc.js';
+import { registerResumeIpcHandlers } from './ipc/resumeIpc.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,8 +44,9 @@ app.whenReady().then(() => {
   // Initialize local SQLite database
   initDatabase();
 
-  // Register strictly validated storage IPC handlers
+  // Register strictly validated storage and resume IPC handlers
   registerStorageIpcHandlers();
+  registerResumeIpcHandlers();
 
   createWindow();
 

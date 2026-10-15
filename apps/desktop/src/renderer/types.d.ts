@@ -26,9 +26,35 @@ export interface ApplyPilotStorageAPI {
   readonly verify: () => Promise<StorageVerificationResult>;
 }
 
+export interface ResumeMetadata {
+  readonly id: string;
+  readonly originalFilename: string;
+  readonly fileFormat: 'pdf' | 'docx';
+  readonly fileSize: number;
+  readonly createdAt: string;
+  readonly characterCount: number;
+  readonly wordCount: number;
+  readonly preview: string;
+}
+
+export interface ImportResumeResult {
+  readonly success: boolean;
+  readonly isDuplicate?: boolean;
+  readonly metadata?: ResumeMetadata;
+  readonly extractedText?: string;
+  readonly error?: string;
+}
+
+export interface ApplyPilotResumeAPI {
+  readonly selectAndImport: () => Promise<ImportResumeResult>;
+  readonly list: () => Promise<readonly ResumeMetadata[]>;
+  readonly getExtractedText: (id: string) => Promise<{ id: string; extractedText: string } | null>;
+}
+
 export interface ApplyPilotAPI {
   readonly getAppInfo: () => AppInfo;
   readonly storage: ApplyPilotStorageAPI;
+  readonly resume: ApplyPilotResumeAPI;
 }
 
 declare global {
