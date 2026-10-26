@@ -1,0 +1,185 @@
+/* ==========================================================================
+   Preview Pane: Text Document Inspector, Header & Copy Action
+   ========================================================================== */
+
+.preview-pane {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  border: var(--border-width-thin) solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  height: 100%;
+  min-height: 540px;
+}
+
+.preview-pane--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-style: dashed;
+}
+
+.empty-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-secondary-bg);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-4) auto;
+}
+
+.preview-empty-message {
+  text-align: center;
+  padding: var(--space-8) var(--space-6);
+  color: var(--color-text-muted);
+  max-width: 360px;
+}
+
+.preview-empty-message h4 {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.preview-empty-message p {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+.preview-pane__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-5);
+  border-bottom: var(--border-width-thin) solid var(--color-divider);
+  background-color: var(--color-background-secondary);
+  gap: var(--space-3);
+  min-height: 64px;
+}
+
+.preview-pane__title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  flex: 1;
+}
+
+.preview-pane__title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  overflow: hidden;
+}
+
+.preview-pane__filename {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-pane__meta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.preview-pane__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.preview-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  border-radius: var(--radius-md);
+  border: var(--border-width-thin) solid var(--color-border);
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.preview-close-btn:hover {
+  background-color: var(--color-secondary-bg);
+  color: var(--color-text-primary);
+  border-color: var(--color-primary);
+}
+
+.preview-close-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-focus-offset), 0 0 0 4px var(--color-focus-ring);
+}
+
+.preview-pane__body {
+  padding: var(--space-4) var(--space-5);
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.preview-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-8);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  height: 100%;
+}
+
+.preview-spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.preview-document-container {
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+  border: var(--border-width-thin) solid var(--color-border);
+  padding: var(--space-5) var(--space-6);
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.preview-text-content {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  line-height: 1.7;
+  letter-spacing: -0.006em;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  margin: 0;
+  tab-size: 4;
+  outline: none;
+}
+
+.preview-text-content:focus-visible {
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 2px var(--color-focus-ring);
+}

@@ -9,6 +9,11 @@ export interface ResumeMetadata {
   readonly characterCount: number;
   readonly wordCount: number;
   readonly preview: string;
+  readonly fileHash?: string;
+  readonly storageFilename?: string;
+  readonly extractedText?: string;
+  readonly extractionStatus?: 'success' | 'partial' | 'needs_review';
+  readonly confidenceScore?: number;
 }
 
 export interface ResumeDetails {
@@ -21,5 +26,9 @@ export interface ImportResumeResult {
   readonly isDuplicate?: boolean;
   readonly metadata?: ResumeMetadata;
   readonly extractedText?: string;
+  readonly extractedProfile?: unknown;
+  readonly extractionStatus?: 'success' | 'partial' | 'needs_review';
+  readonly confidenceScore?: number;
   readonly error?: string;
 }
+

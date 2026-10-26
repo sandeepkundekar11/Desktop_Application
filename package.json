@@ -13,7 +13,14 @@
     "build:desktop": "npm --workspace=@applypilot/desktop run build",
     "typecheck:desktop": "npm --workspace=@applypilot/desktop run typecheck",
     "typecheck:ui": "tsc -p packages/ui/tsconfig.json --noEmit",
-    "typecheck": "npm run typecheck:ui && npm run typecheck:desktop"
+    "typecheck": "npm run typecheck:ui && npm run typecheck:desktop",
+    "test:database": "npm --workspace=@applypilot/desktop run test:database",
+    "test:storage-foundation": "npm --workspace=@applypilot/desktop run test:storage-foundation",
+    "test:storage-path": "npm --workspace=@applypilot/desktop run test:storage-path",
+    "test:clean-storage-profile": "npm --workspace=@applypilot/desktop run test:clean-storage-profile",
+    "test:final-storage-job-architecture": "npm --workspace=@applypilot/desktop run test:final-storage-job-architecture",
+    "test:complete-profile-schema": "npm --workspace=@applypilot/desktop run test:complete-profile-schema",
+    "test:connectors": "npm --workspace=@applypilot/desktop run test:connectors"
   },
   "devDependencies": {
     "typescript": "^5.8.2"

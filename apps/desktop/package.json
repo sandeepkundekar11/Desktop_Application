@@ -10,6 +10,15 @@
     "build:electron": "tsc -p tsconfig.node.json",
     "build:renderer": "vite build",
     "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.web.json --noEmit",
+    "test:database": "electron scripts/test-database.mjs",
+    "test:storage-foundation": "electron scripts/test-storage-foundation.mjs",
+    "test:storage-path": "electron scripts/test-storage-path-strategy.mjs",
+    "test:clean-storage-profile": "electron scripts/test-clean-storage-profile.mjs",
+    "test:final-storage-job-architecture": "electron scripts/test-final-storage-job-architecture.mjs",
+    "test:complete-profile-schema": "electron scripts/test-complete-profile-schema.mjs",
+    "test:minimal-foundation": "electron scripts/test-minimal-profile-foundation.mjs",
+    "test:replace-resume-flow": "electron scripts/test-replace-resume-flow.mjs",
+    "test:connectors": "electron scripts/test-connector-persistence.mjs",
     "start": "electron ."
   },
   "dependencies": {

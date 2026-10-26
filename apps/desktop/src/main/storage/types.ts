@@ -3,6 +3,7 @@ export const ALLOWLISTED_SETTING_KEYS = [
   'telemetry_enabled',
   'test_setting',
   'app_language',
+  'default_profile_id',
 ] as const;
 
 export type AllowlistedSettingKey = typeof ALLOWLISTED_SETTING_KEYS[number];
@@ -12,16 +13,23 @@ export const isAllowlistedSettingKey = (key: unknown): key is AllowlistedSetting
 };
 
 export type StorageArea =
+  | 'resumes'
+  | 'resumes_master'
   | 'resumes_original'
-  | 'resumes_optimized'
-  | 'resumes_tailored'
+  | 'resumes_originals'
+  | 'jobs'
+  | 'applications'
+  | 'documents'
   | 'exports'
+  | 'backups'
   | 'logs';
 
 export interface StorageStatus {
   readonly isInitialized: boolean;
   readonly databasePath: string;
   readonly schemaVersion: number;
+  readonly dataRoot?: string;
+  readonly storageMode?: string;
 }
 
 export interface StorageVerificationResult {

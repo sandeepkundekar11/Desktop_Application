@@ -11,52 +11,84 @@ export interface StorageStatus {
   readonly isInitialized: boolean;
   readonly databasePath: string;
   readonly schemaVersion: number;
-}
-
-export interface StorageVerificationResult {
-  readonly success: boolean;
-  readonly message: string;
-  readonly testKey: string;
-  readonly testValue: string;
-  readonly retrievedValue: string | null;
+  readonly dataRoot?: string;
+  readonly storageMode?: string;
 }
 
 export interface ApplyPilotStorageAPI {
   readonly getStatus: () => Promise<StorageStatus>;
-  readonly saveSetting: (key: string, value: string) => Promise<boolean>;
-  readonly getSetting: (key: string) => Promise<string | null>;
-  readonly verify: () => Promise<StorageVerificationResult>;
 }
 
-export interface ResumeMetadata {
-  readonly id: string;
-  readonly originalFilename: string;
-  readonly fileFormat: 'pdf' | 'docx';
+export interface MasterResumeStatus {
+  readonly exists: boolean;
+  readonly filename: string | null;
+  readonly relativeUrl: string | null;
   readonly fileSize: number;
-  readonly createdAt: string;
-  readonly characterCount: number;
-  readonly wordCount: number;
-  readonly preview: string;
+  readonly updatedAt: string | null;
 }
 
 export interface ImportResumeResult {
   readonly success: boolean;
-  readonly isDuplicate?: boolean;
-  readonly metadata?: ResumeMetadata;
-  readonly extractedText?: string;
   readonly error?: string;
+  readonly profile?: unknown;
+  readonly originalFilename?: string;
+  readonly masterResumeUrl?: string;
 }
 
 export interface ApplyPilotResumeAPI {
   readonly selectAndImport: () => Promise<ImportResumeResult>;
-  readonly list: () => Promise<readonly ResumeMetadata[]>;
-  readonly getExtractedText: (id: string) => Promise<{ id: string; extractedText: string } | null>;
+  readonly getMasterStatus: () => Promise<MasterResumeStatus>;
+}
+
+export interface ApplyPilotProfileAPI {
+  readonly get: () => Promise<unknown>;
+  readonly save: (profile: unknown) => Promise<boolean>;
+  readonly merge: (profile: unknown) => Promise<unknown>;
+}
+
+export interface ConnectorSettings {
+  readonly locationPreference: string;
+  readonly refreshIntervalHours: number;
+  readonly fetchLimit: number;
+  readonly workplaceType?: string;
+  readonly targetKeywords?: readonly string[];
+  readonly easyApplyOnly?: boolean;
+}
+
+export interface ConnectorConfig {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly isEnabled: boolean;
+  readonly state?: string;
+  readonly implementationStatus: string;
+  readonly connectionStatus: string;
+  readonly lastCheckedAt: string | null;
+  readonly statusMessage: string;
+  readonly settings: ConnectorSettings;
+}
+
+export interface ConnectorsFileSchema {
+  readonly version: number;
+  readonly updatedAt: string;
+  readonly connectors: readonly ConnectorConfig[];
+}
+
+export interface ApplyPilotConnectorsAPI {
+  readonly getAll: () => Promise<ConnectorsFileSchema>;
+  readonly update: (
+    id: string,
+    updates: { isEnabled?: boolean; settings?: Partial<ConnectorSettings> }
+  ) => Promise<ConnectorsFileSchema>;
+  readonly testConnection: (id: string) => Promise<ConnectorConfig>;
 }
 
 export interface ApplyPilotAPI {
   readonly getAppInfo: () => AppInfo;
   readonly storage: ApplyPilotStorageAPI;
   readonly resume: ApplyPilotResumeAPI;
+  readonly profile: ApplyPilotProfileAPI;
+  readonly connectors: ApplyPilotConnectorsAPI;
 }
 
 const safeApi: ApplyPilotAPI = {
@@ -68,22 +100,28 @@ const safeApi: ApplyPilotAPI = {
   }),
   storage: {
     getStatus: (): Promise<StorageStatus> => ipcRenderer.invoke('storage:get-status'),
-    saveSetting: (key: string, value: string): Promise<boolean> =>
-      ipcRenderer.invoke('storage:set-setting', key, value),
-    getSetting: (key: string): Promise<string | null> =>
-      ipcRenderer.invoke('storage:get-setting', key),
-    verify: (): Promise<StorageVerificationResult> =>
-      ipcRenderer.invoke('storage:verify'),
   },
   resume: {
     selectAndImport: (): Promise<ImportResumeResult> =>
       ipcRenderer.invoke('resume:select-and-import'),
-    list: (): Promise<readonly ResumeMetadata[]> =>
-      ipcRenderer.invoke('resume:list'),
-    getExtractedText: (id: string): Promise<{ id: string; extractedText: string } | null> =>
-      ipcRenderer.invoke('resume:get-extracted-text', id),
+    getMasterStatus: (): Promise<MasterResumeStatus> =>
+      ipcRenderer.invoke('resume:get-master-status'),
+  },
+  profile: {
+    get: (): Promise<unknown> => ipcRenderer.invoke('profile:get'),
+    save: (profile: unknown): Promise<boolean> => ipcRenderer.invoke('profile:save', profile),
+    merge: (profile: unknown): Promise<unknown> => ipcRenderer.invoke('profile:merge', profile),
+  },
+  connectors: {
+    getAll: (): Promise<ConnectorsFileSchema> => ipcRenderer.invoke('connectors:get-all'),
+    update: (
+      id: string,
+      updates: { isEnabled?: boolean; settings?: Partial<ConnectorSettings> }
+    ): Promise<ConnectorsFileSchema> =>
+      ipcRenderer.invoke('connectors:update', { id, ...updates }),
+    testConnection: (id: string): Promise<ConnectorConfig> =>
+      ipcRenderer.invoke('connectors:test-connection', { id }),
   },
 };
 
-// Expose safe, restricted bridge adhering strictly to security defaults
 contextBridge.exposeInMainWorld('applyPilotAPI', safeApi);

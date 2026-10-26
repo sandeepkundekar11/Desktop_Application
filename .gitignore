@@ -53,3 +53,8 @@ Desktop.ini
 .turbo/
 tmp/
 temp/
+
+# User persistent application data
+data/
+.applypilot-data/
+

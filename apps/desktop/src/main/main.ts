@@ -1,19 +1,22 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { initDatabase, closeDatabase } from './storage/database.js';
 import { registerStorageIpcHandlers } from './ipc/storageIpc.js';
 import { registerResumeIpcHandlers } from './ipc/resumeIpc.js';
+import { registerProfileIpcHandlers } from './ipc/profileIpc.js';
+import { registerConnectorsIpcHandlers } from './ipc/connectorsIpc.js';
+import { initializeStorageHierarchy } from './storage/directoryInitializer.js';
+import { resolveStorageRoot, logStorageDiagnostics } from './storage/storageRootResolver.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const createWindow = (): BrowserWindow => {
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 650,
-    minWidth: 800,
-    minHeight: 550,
+    width: 1200,
+    height: 800,
+    minWidth: 980,
+    minHeight: 650,
     title: 'ApplyPilot',
     backgroundColor: '#0f172a',
     webPreferences: {
@@ -41,12 +44,18 @@ const createWindow = (): BrowserWindow => {
 };
 
 app.whenReady().then(() => {
-  // Initialize local SQLite database
-  initDatabase();
+  // 1. Resolve storage root and log diagnostics
+  const resolution = resolveStorageRoot();
+  logStorageDiagnostics(resolution);
 
-  // Register strictly validated storage and resume IPC handlers
+  // 2. Initialize target portable directory hierarchy and manifest
+  initializeStorageHierarchy();
+
+  // 3. Register strictly validated JSON storage, resume, profile, and connector IPC handlers
   registerStorageIpcHandlers();
   registerResumeIpcHandlers();
+  registerProfileIpcHandlers();
+  registerConnectorsIpcHandlers();
 
   createWindow();
 
@@ -59,7 +68,7 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    closeDatabase();
     app.quit();
   }
 });
+

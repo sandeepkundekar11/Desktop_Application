@@ -1,96 +1,143 @@
-import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs';
 import { dialog, BrowserWindow } from 'electron';
 import { validateResumeFile } from './fileValidator.js';
 import { extractResumeText } from '../extraction/index.js';
-import { saveStorageFile } from '../storage/fileStorage.js';
-import {
-  insertResumeRecord,
-  findResumeByHash,
-  listAllResumes,
-  getResumeDetailsById,
-} from './resumeRepository.js';
-import { ImportResumeResult, ResumeMetadata, ResumeDetails } from './types.js';
+import { parseCandidateProfileFromText } from '../extraction/profileParser.js';
+import { getTargetStorageLocations } from '../storage/targetStorageLocations.js';
+import { saveProfile } from '../storage/jsonProfileRepository.js';
+import { MinimalProfile, isMinimalProfile } from '../storage/minimalProfileSchema.js';
 
-const PREVIEW_MAX_LENGTH = 160;
+export interface ImportResumeResult {
+  readonly success: boolean;
+  readonly error?: string;
+  readonly profile?: MinimalProfile;
+  readonly originalFilename?: string;
+  readonly masterResumeUrl?: string;
+}
 
-export const importResumeBuffer = async (
-  filename: string,
-  buffer: Buffer
-): Promise<ImportResumeResult> => {
-  // 1. Validate size, extension, and magic signatures
-  const { format, size } = validateResumeFile(filename, buffer);
+export interface MasterResumeStatus {
+  readonly exists: boolean;
+  readonly filename: string | null;
+  readonly relativeUrl: string | null;
+  readonly fileSize: number;
+  readonly updatedAt: string | null;
+}
 
-  // 2. Compute SHA-256 hash for duplicate detection
-  const fileHash = crypto.createHash('sha256').update(buffer).digest('hex');
+export const getMasterResumeStatus = (overrideRoot?: string): MasterResumeStatus => {
+  const locations = getTargetStorageLocations(overrideRoot);
 
-  // 3. Duplicate check
-  const existingMetadata = findResumeByHash(fileHash);
-  if (existingMetadata) {
-    const existingDetails = getResumeDetailsById(existingMetadata.id);
+  if (fs.existsSync(locations.masterResumePdf)) {
+    const stat = fs.statSync(locations.masterResumePdf);
     return {
-      success: true,
-      isDuplicate: true,
-      metadata: existingMetadata,
-      extractedText: existingDetails?.extractedText,
+      exists: true,
+      filename: 'master-resume.pdf',
+      relativeUrl: 'resumes/master-resume.pdf',
+      fileSize: stat.size,
+      updatedAt: stat.mtime.toISOString(),
     };
   }
 
-  // 4. Extract readable text
-  const extraction = await extractResumeText(format, buffer);
-
-  // 5. Generate unique identifier and store original file safely
-  const resumeId = crypto.randomUUID();
-  const storageFilename = `${resumeId}.${format}`;
-  saveStorageFile('resumes_original', storageFilename, buffer, false);
-
-  // 6. Generate preview string
-  const preview = extraction.text.slice(0, PREVIEW_MAX_LENGTH).replace(/\s+/g, ' ').trim();
-  const createdAt = new Date().toISOString();
-
-  // 7. Persist metadata and extracted text in SQLite
-  const metadata: ResumeMetadata = {
-    id: resumeId,
-    originalFilename: path.basename(filename),
-    fileFormat: format,
-    fileSize: size,
-    createdAt,
-    characterCount: extraction.characterCount,
-    wordCount: extraction.wordCount,
-    preview,
-  };
-
-  insertResumeRecord({
-    id: resumeId,
-    originalFilename: metadata.originalFilename,
-    fileFormat: format,
-    fileSize: size,
-    fileHash,
-    storageFilename,
-    extractedText: extraction.text,
-    characterCount: extraction.characterCount,
-    wordCount: extraction.wordCount,
-    preview,
-    createdAt,
-  });
+  if (fs.existsSync(locations.masterResumeDocx)) {
+    const stat = fs.statSync(locations.masterResumeDocx);
+    return {
+      exists: true,
+      filename: 'master-resume.docx',
+      relativeUrl: 'resumes/master-resume.docx',
+      fileSize: stat.size,
+      updatedAt: stat.mtime.toISOString(),
+    };
+  }
 
   return {
-    success: true,
-    isDuplicate: false,
-    metadata,
-    extractedText: extraction.text,
+    exists: false,
+    filename: null,
+    relativeUrl: null,
+    fileSize: 0,
+    updatedAt: null,
   };
+};
+
+export const importResumeBuffer = async (
+  filename: string,
+  buffer: Buffer,
+  overrideRoot?: string
+): Promise<ImportResumeResult> => {
+  const locations = getTargetStorageLocations(overrideRoot);
+  let stagingFile: string | null = null;
+
+  try {
+    // 1. Validate file format and size
+    const { format } = validateResumeFile(filename, buffer);
+
+    // 2. Extract plain text from PDF/DOCX
+    const extraction = await extractResumeText(format, buffer);
+
+    // 3. Parse text into a completely fresh MinimalProfile (no merging with old resume)
+    const relativeMasterUrl = `resumes/master-resume.${format}`;
+    const extractionResult = parseCandidateProfileFromText(extraction.text, relativeMasterUrl);
+    const freshProfile = extractionResult.profile;
+
+    if (!isMinimalProfile(freshProfile)) {
+      throw new Error('Extracted candidate data does not conform to the required profile schema');
+    }
+
+    // 4. Stage the new master file first so we never destroy the old one until validated
+    if (!fs.existsSync(locations.resumesDir)) {
+      fs.mkdirSync(locations.resumesDir, { recursive: true });
+    }
+
+    stagingFile = path.join(locations.resumesDir, `.staging_${Date.now()}.${format}`);
+    fs.writeFileSync(stagingFile, buffer);
+
+    // 5. Replace previous profile JSON entirely with the fresh extracted profile
+    saveProfile(freshProfile, overrideRoot);
+
+    // 6. Replace master resume file atomically and retain ONLY the new master resume
+    const targetFile = format === 'pdf' ? locations.masterResumePdf : locations.masterResumeDocx;
+    const alternateFile = format === 'pdf' ? locations.masterResumeDocx : locations.masterResumePdf;
+
+    if (fs.existsSync(targetFile)) {
+      fs.unlinkSync(targetFile);
+    }
+    fs.renameSync(stagingFile, targetFile);
+    stagingFile = null;
+
+    if (fs.existsSync(alternateFile)) {
+      try {
+        fs.unlinkSync(alternateFile);
+      } catch {
+        // ignore
+      }
+    }
+
+    return {
+      success: true,
+      profile: freshProfile,
+      originalFilename: path.basename(filename),
+      masterResumeUrl: relativeMasterUrl,
+    };
+  } catch (error) {
+    // Clean up staging file on failure to leave existing resume intact
+    if (stagingFile && fs.existsSync(stagingFile)) {
+      try {
+        fs.unlinkSync(stagingFile);
+      } catch {
+        // ignore
+      }
+    }
+    throw error;
+  }
 };
 
 export const selectAndImportResume = async (
   targetWindow?: BrowserWindow
 ): Promise<ImportResumeResult> => {
-  const result = await dialog.showOpenDialog(targetWindow ?? null as unknown as BrowserWindow, {
-    title: 'Select Resume (PDF or DOCX)',
+  const result = await dialog.showOpenDialog(targetWindow ?? (null as unknown as BrowserWindow), {
+    title: 'Select Master Resume (PDF or DOCX)',
     properties: ['openFile'],
     filters: [
-      { name: 'Resumes (*.pdf, *.docx)', extensions: ['pdf', 'docx'] },
+      { name: 'Supported Resumes (*.pdf, *.docx)', extensions: ['pdf', 'docx'] },
       { name: 'PDF Documents (*.pdf)', extensions: ['pdf'] },
       { name: 'Word Documents (*.docx)', extensions: ['docx'] },
     ],
@@ -109,15 +156,4 @@ export const selectAndImportResume = async (
   const buffer = fs.readFileSync(selectedPath);
 
   return importResumeBuffer(filename, buffer);
-};
-
-export const listSavedResumes = (): readonly ResumeMetadata[] => {
-  return listAllResumes();
-};
-
-export const getResumeTextById = (id: string): ResumeDetails | null => {
-  if (!id || typeof id !== 'string') {
-    throw new Error('Invalid resume ID specified');
-  }
-  return getResumeDetailsById(id);
 };

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const desktopRoot = path.resolve(__dirname, '..');
+const projectRoot = path.resolve(desktopRoot, '../..');
 
 // 1. Compile main & preload scripts
 console.log('[dev] Compiling Electron main and preload processes...');
@@ -33,6 +34,7 @@ const electronProcess = spawn(electronBin, ['.'], {
   stdio: 'inherit',
   env: {
     ...process.env,
+    APPLYPILOT_PROJECT_ROOT: projectRoot,
     VITE_DEV_SERVER_URL: devUrl,
     NODE_ENV: 'development',
   },

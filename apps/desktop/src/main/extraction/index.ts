@@ -6,6 +6,12 @@ export * from './types.js';
 export * from './normalizer.js';
 export * from './pdfExtractor.js';
 export * from './docxExtractor.js';
+export * from './contactParser.js';
+export * from './sectionParser.js';
+export * from './experienceParser.js';
+export * from './projectParser.js';
+export * from './certificationParser.js';
+export * from './profileParser.js';
 
 export const extractResumeText = async (
   format: SupportedResumeFormat,
